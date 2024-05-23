@@ -17,6 +17,6 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 WORKDIR /etc/robot/
 
-ADD ./Rocket.toml /etc/robot
+#ADD ./Rocket.toml /etc/robot
 
 CMD ["robot"]
