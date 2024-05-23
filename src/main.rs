@@ -68,18 +68,28 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
             };
             info!("{:#?}", webhook_event);
 
-            if webhook_event.event_type != harbor::HARBOR_EVENT_TYPE_SCANNING_COMPLETED {
-                info!("{:#?}", webhook_event.event_type);
-                return Some(json!({ "status": "ok"}))
+            match webhook_event.event_type {
+                harbor::HARBOR_EVENT_TYPE_SCANNING_COMPLETED => {
+                    info!("{:#?}", webhook_event.event_type);
+                    return Some(json!({ "status": "ok"}));
+                },
+                harbor::HARBOR_EVENT_TYPE_PUSH_ARTIFACT => {
+                    info!("{:#?}", webhook_event.event_type);
+                },
+                harbor::HARBOR_EVENT_TYPE_PULL_ARTIFACT => {
+                    info!("{:#?}", webhook_event.event_type);
+                }
+                _ => {
+
+                }
             }
 
             // create event message
-            let mut resource = &mut harbor::Resource::default();
             if webhook_event.event_data.resources.len() <= 0 {
                 info!("{:#?}", "CVE not found");
                 return Some(json!({ "status": "ok"}))
             }
-            resource = webhook_event.event_data.resources.first_mut().unwrap();
+            let resource = webhook_event.event_data.resources.first_mut().unwrap();
             if resource.scan_overview.report_v1.summary.total <= 0 {
                 info!("{:#?}", "CVE not found");
                 return Some(json!({ "status": "ok"}))

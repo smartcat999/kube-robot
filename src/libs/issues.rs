@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::collections::HashMap;
 use reqwest::Body;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,7 @@ const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36
 pub struct GithubHttpClient {
     pub client: Client,
 }
+
 
 impl GithubHttpClient {
     pub fn new() -> GithubHttpClient {
