@@ -34,9 +34,6 @@ lazy_static! {
     };
 }
 
-pub const HTTP_RESPONSE_OK: Value = json!({ "status": "ok"});
-pub const HTTP_RESPONSE_FAILED: Value = json!({ "status": "failed"});
-
 
 #[get("/healthz")]
 fn index() -> &'static str {
@@ -53,12 +50,12 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                 Ok(v) => v,
                 Err(e) => {
                     warn!("{}", e);
-                    return Some(HTTP_RESPONSE_FAILED);
+                    return Some(json!({ "status": "failed"}));
                 }
             };
             if !bytes.is_complete() {
                 warn!("there are bytes remaining in the stream");
-                return Some(HTTP_RESPONSE_FAILED);
+                return Some(json!({ "status": "failed"}));
             }
 
             let bytes_data = bytes.into_inner();
@@ -66,21 +63,28 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                 Ok(v) => v,
                 Err(e) => {
                     warn!("{}", e);
-                    return Some(HTTP_RESPONSE_FAILED);
+                    return Some(json!({ "status": "failed"}));
                 }
             };
             info!("{:#?}", webhook_event);
 
             if webhook_event.event_type != harbor::HARBOR_EVENT_TYPE_SCANNING_COMPLETED {
                 info!("{:#?}", webhook_event.event_type);
-                return Some(HTTP_RESPONSE_OK)
+                return Some(json!({ "status": "ok"}))
             }
 
             // create event message
             let mut resource = &mut harbor::Resource::default();
-            if webhook_event.event_data.resources.len() <= 1 {
-                resource = webhook_event.event_data.resources.first_mut().unwrap();
+            if webhook_event.event_data.resources.len() <= 0 {
+                info!("{:#?}", "CVE not found");
+                return Some(json!({ "status": "ok"}))
             }
+            resource = webhook_event.event_data.resources.first_mut().unwrap();
+            if resource.scan_overview.report_v1.summary.total <= 0 {
+                info!("{:#?}", "CVE not found");
+                return Some(json!({ "status": "ok"}))
+            }
+
             let mut content = format!("<font color=\\\"info\\\">harbor</font>\n\
             事件：<font color=\\\"info\\\">{}</font>\n\
             仓库：<font color=\\\"info\\\">{}</font>\n\
@@ -116,7 +120,7 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                     Ok(v) => v,
                     Err(e) => {
                         warn!("{}", e);
-                        return Some(HTTP_RESPONSE_FAILED);
+                        return Some(json!({ "status": "failed"}));
                     }
                 };
 
@@ -126,14 +130,14 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                     Ok(v) => v,
                     Err(e) => {
                         warn!("{}", e);
-                        return Some(HTTP_RESPONSE_FAILED);
+                        return Some(json!({ "status": "failed"}));
                     }
                 };
                 let issue_meta = match issue_response.json::<IssueResponse>().await {
                     Ok(v) => v,
                     Err(e) => {
                         warn!("{}", e);
-                        return Some(HTTP_RESPONSE_FAILED);
+                        return Some(json!({ "status": "failed"}));
                     }
                 };
                 content = format!("{}GitHub: [issue #{}]({})\n", content, issue.number, issue_meta.html_url)
@@ -148,7 +152,7 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                 Ok(v) => v,
                 Err(e) => {
                     warn!("{}", e);
-                    return Some(HTTP_RESPONSE_FAILED);
+                    return Some(json!({ "status": "failed"}));
                 }
             };
             let body = Body::from(event_body);
@@ -161,17 +165,17 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                 Ok(v) => v,
                 Err(e) => {
                     warn!("{}", e);
-                    return Some(HTTP_RESPONSE_FAILED);
+                    return Some(json!({ "status": "failed"}));
                 }
             };
             let status = response.status();
             info!("{}", status);
         }
         _ => {
-            return Some(HTTP_RESPONSE_FAILED);
+            return Some(json!({ "status": "failed"}));
         }
     }
-    Some(HTTP_RESPONSE_OK)
+    Some(json!({ "status": "ok"}))
 }
 
 #[launch]
