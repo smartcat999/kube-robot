@@ -71,7 +71,6 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
             match webhook_event.event_type {
                 harbor::HARBOR_EVENT_TYPE_SCANNING_COMPLETED => {
                     info!("{:#?}", webhook_event.event_type);
-                    return Some(json!({ "status": "ok"}));
                 },
                 harbor::HARBOR_EVENT_TYPE_PUSH_ARTIFACT => {
                     info!("{:#?}", webhook_event.event_type);
@@ -80,7 +79,7 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                     info!("{:#?}", webhook_event.event_type);
                 }
                 _ => {
-
+                    return Some(json!({ "status": "ok"}));
                 }
             }
 
