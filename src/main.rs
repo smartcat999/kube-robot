@@ -19,6 +19,7 @@ use crate::libs::http::ProxyClient;
 use config::RuntimeConfig;
 use rocket::fairing::AdHoc;
 use rocket::{State};
+use crate::config::NotifyType;
 use crate::libs::issues::{GithubHttpClient, IssueHelper, IssueReq, IssueResponse};
 
 
@@ -168,17 +169,21 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
             let mut header = HeaderMap::new();
             header.insert(header::ACCEPT, header::HeaderValue::from_str("application/json").unwrap());
 
-            let url: String = runtime_config.wechat_api.clone();
-            let client = PROXY_CLIENT.lock().await;
-            let response = match client.fetch_url(&url, "POST", body, &header).await {
-                Ok(v) => v,
-                Err(e) => {
-                    warn!("{}", e);
-                    return Some(json!({ "status": "failed"}));
-                }
-            };
-            let status = response.status();
-            info!("{}", status);
+            match runtime_config.notification.notify_type {
+                NotifyType::Wechat => {
+                    let url: String = runtime_config.notification.url.clone();
+                    let client = PROXY_CLIENT.lock().await;
+                    let response = match client.fetch_url(&url, "POST", body, &header).await {
+                        Ok(v) => v,
+                        Err(e) => {
+                            warn!("{}", e);
+                            return Some(json!({ "status": "failed"}));
+                        }
+                    };
+                    let status = response.status();
+                    info!("{}", status);
+                },
+            }
         }
         _ => {
             return Some(json!({ "status": "failed"}));
