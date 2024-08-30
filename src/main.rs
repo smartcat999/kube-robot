@@ -1,12 +1,10 @@
-mod libs;
-mod model;
+mod pkg;
 mod config;
 
 #[macro_use]
 extern crate rocket;
 
-use model::harbor;
-use model::wechat;
+use pkg::model::{self, harbor, wechat};
 use rocket::serde::json::{Value, json};
 use rocket::serde::{json};
 use std::sync::{Arc};
@@ -15,12 +13,12 @@ use lazy_static::lazy_static;
 use reqwest::Body;
 use rocket::data::{Data, ToByteUnit};
 use http::{HeaderMap, header};
-use crate::libs::http::ProxyClient;
+use pkg::http::proxy::ProxyClient;
 use config::RuntimeConfig;
 use rocket::fairing::AdHoc;
 use rocket::{State};
 use crate::config::NotifyType;
-use crate::libs::issues::{GithubHttpClient, IssueHelper, IssueReq, IssueResponse};
+use pkg::github::issues::{GithubHttpClient, IssueHelper, IssueReq, IssueResponse};
 
 
 
