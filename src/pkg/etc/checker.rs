@@ -34,7 +34,7 @@ pub fn check(config: Config) -> Result<()> {
 
 fn ensure_dir_exists(path: &str, description: &str) -> Result<()> {
     if !dir_exists(path) {
-        warn!(description, "does not exist");
+        warn!("{} does not exist", description);
         debug!("Creating {}", description);
         fs::create_dir_all(path)?;
     }
