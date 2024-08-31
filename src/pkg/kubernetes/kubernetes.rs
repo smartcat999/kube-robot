@@ -41,7 +41,6 @@ impl KubernetesClient {
                     }
                 }
             });
-        debug!("{:?}", patch);
         let pp = PatchParams::default();
         Ok(deploys.patch(name, &pp, &Patch::Merge(&patch)).await?)
     }

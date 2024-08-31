@@ -7,6 +7,7 @@ pub enum NotifyType {
 }
 
 impl NotifyType {
+    #[allow(unused)]
     fn as_str(&self) -> &'static str {
         match self {
             NotifyType::Wechat => "wechat",

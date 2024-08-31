@@ -1,10 +1,7 @@
-mod pkg;
-mod config;
-
 #[macro_use]
 extern crate rocket;
 
-use pkg::model::{self, harbor, wechat};
+use common::pkg::model::{self, harbor, wechat};
 use rocket::serde::json::{Value, json};
 use rocket::serde::{json};
 use std::sync::{Arc};
@@ -13,13 +10,14 @@ use lazy_static::lazy_static;
 use reqwest::Body;
 use rocket::data::{Data, ToByteUnit};
 use http::{HeaderMap, header};
-use pkg::http::proxy::ProxyClient;
-use config::RuntimeConfig;
+use common::pkg::http::proxy::ProxyClient;
+use common::config::RuntimeConfig;
 use rocket::fairing::AdHoc;
 use rocket::{State};
-use crate::config::NotifyType;
-use pkg::github::issues::{GithubHttpClient, IssueHelper, IssueReq, IssueResponse};
-
+use common::config::NotifyType;
+use common::pkg::github::issues::{GithubHttpClient, IssueHelper, IssueReq, IssueResponse};
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 
 lazy_static! {
@@ -70,10 +68,10 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
             match webhook_event.event_type {
                 harbor::HARBOR_EVENT_TYPE_SCANNING_COMPLETED => {
                     info!("{:#?}", webhook_event.event_type);
-                },
+                }
                 harbor::HARBOR_EVENT_TYPE_PUSH_ARTIFACT => {
                     info!("{:#?}", webhook_event.event_type);
-                },
+                }
                 harbor::HARBOR_EVENT_TYPE_PULL_ARTIFACT => {
                     info!("{:#?}", webhook_event.event_type);
                 }
@@ -85,12 +83,12 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
             // create event message
             if webhook_event.event_data.resources.len() <= 0 {
                 info!("{:#?}", "CVE not found");
-                return Some(json!({ "status": "ok"}))
+                return Some(json!({ "status": "ok"}));
             }
             let resource = webhook_event.event_data.resources.first_mut().unwrap();
             if resource.scan_overview.report_v1.summary.total <= 0 {
                 info!("{:#?}", "CVE not found");
-                return Some(json!({ "status": "ok"}))
+                return Some(json!({ "status": "ok"}));
             }
 
             let mut content = format!("<font color=\\\"info\\\">harbor</font>\n\
@@ -99,12 +97,12 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
             镜像：{}\n\
             扫描结果: <font color=\\\"info\\\">{}总计-{}可修复</font>\n\
             操作者：<font color=\\\"info\\\">{}</font>\n",
-                                  webhook_event.event_type,
-                                  webhook_event.event_data.repository.repo_full_name,
-                                  format!("[{}]({})", resource.resource_url, resource.resource_url),
-                                  resource.scan_overview.report_v1.summary.total,
-                                  resource.scan_overview.report_v1.summary.fixable,
-                                  webhook_event.operator);
+                                      webhook_event.event_type,
+                                      webhook_event.event_data.repository.repo_full_name,
+                                      format!("[{}]({})", resource.resource_url, resource.resource_url),
+                                      resource.scan_overview.report_v1.summary.total,
+                                      resource.scan_overview.report_v1.summary.fixable,
+                                      webhook_event.operator);
 
             // create GitHub issue
             if webhook_event.event_type == "SCANNING_COMPLETED" && resource.scan_overview.report_v1.summary.total > 0 {
@@ -180,7 +178,7 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
                     };
                     let status = response.status();
                     info!("{}", status);
-                },
+                }
             }
         }
         _ => {
@@ -192,6 +190,13 @@ async fn push(channel: &str, data: Data<'_>, runtime_config: &State<RuntimeConfi
 
 #[launch]
 fn rocket() -> _ {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::TRACE)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed");
+
     let config = rocket::Config::default();
     if config.tls_enabled() {
         info!("TLS is enabled!");

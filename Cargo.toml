@@ -8,6 +8,10 @@ edition = "2021"
 name = "robot"
 path = "src/main.rs"
 
+[lib]
+name = "common"
+path = "src/lib.rs"
+
 [dependencies]
 rocket = { version = "=0.5.0-rc.3", features = ["tls", "json", "msgpack", "uuid"] }
 reqwest = { version = "0.11", features = ["json", "native-tls", "rustls-tls"] }
@@ -19,6 +23,11 @@ serde_json = "1.0.117"
 kube = { version = "0.91.0", features = ["runtime", "derive"] }
 k8s-openapi = { version = "0.22.0", features = ["latest"] }
 chrono = "0.4.38"
+thiserror = "1.0.63"
+anyhow = "1.0.86"
+log = "0.4.21"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 
 [dev-dependencies]
 tokio-test = "0.4.2"

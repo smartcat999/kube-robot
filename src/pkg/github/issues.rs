@@ -6,6 +6,7 @@ use serde_json;
 use reqwest;
 use http::{HeaderMap, Method};
 use reqwest::{Response, Url, Client};
+use rocket::info;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
